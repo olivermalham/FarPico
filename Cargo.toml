@@ -6,3 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Postcard for (de)serialsing JSON
+postcard = "1.0.0"
+
+# By default, `serde` has the `std` feature enabled, which makes it unsuitable for embedded targets
+# disabling default-features fixes this
+serde = { version = "1.0.*", default-features = false }
+
+sha1 = "0.10.5"
+base64 = "0.21.0"
