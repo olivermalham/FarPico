@@ -1,5 +1,5 @@
 use std::net::{TcpStream, Shutdown};
-use std::io::BufReader;
+use std::io::{BufReader, BufWriter};
 use std::io::prelude::*;
 use sha1::{Sha1, Digest};
 use base64::{engine::general_purpose, Engine as _};
@@ -24,39 +24,39 @@ pub struct Connection {
 }
 
 
-// TODO: Should these be struct methods? Might just be OO instinct. What's the Rust way?
 pub fn new_connection(tcp_connection: TcpStream) -> Connection {
 
-    let mut connection : Connection = get_headers(new(tcp_connection));
+    let mut connection : Connection = check_headers(new(tcp_connection));
 
     println!("New connection:\n {:?}", connection);
 
     // Determine connection type
-    // If http, send basic HTML and close
     match connection.status {
+        // HTTP Connection, so send the boiler plate HTML and close the connection
         ConnectionState::HTTP => {
             connection.connection.write_all(html_response()).unwrap();
             connection.connection.shutdown(Shutdown::Both).expect("shutdown call failed");
             connection.status = ConnectionState::Closed;
+            println!("Connection Closed");
         }
+        // WebSocket connection attempt so send back the handshake
         ConnectionState::WsHandshake => {
             println!("WsHandshake: {:?}", ws_handshake(&connection));
             connection.connection.write_all(ws_handshake(&connection).as_bytes()).unwrap();
             connection.status = ConnectionState::WsOpen;
         }
+        // WebSocket connection open
         ConnectionState::WsOpen => {
             println!("WsOpen!!!");
         }
         _ => ()
     }
-    // If websocket, start handshake process
-
 
     return connection;
 }
 
 
-fn get_headers(mut connection: Connection) -> Connection {
+fn check_headers(mut connection: Connection) -> Connection {
     let reader = BufReader::new(&mut connection.connection);
     let http_request: Vec<_> = reader
         .lines()
@@ -103,8 +103,7 @@ r#"HTTP/1.1 200 OK
 <title>FarPico</title>
 <script>
     let webSocket = new WebSocket('ws://localhost:7878/farpi');
-    webSocket.onmessage = function(e) { console.log(e)}
-    webSocket.send("test")
+    webSocket.onmessage = function(e) { console.log(e); webSocket.send(e);}
 </script>
 </head>
 
@@ -142,12 +141,41 @@ pub fn new(new_connection: TcpStream) -> Connection {
 }
 
 
-pub fn handle_connection(connection: &mut Connection){
-    let reader = BufReader::new(&mut connection.connection);
-    let http_request: Vec<_> = reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
-    println!("Data read: {:?}", http_request);
+pub fn gather_actions(connection: &mut Connection){
+
+    match  connection.status {
+        ConnectionState::WsOpen => {
+            let reader = BufReader::new(&mut connection.connection);
+            let http_request: Vec<_> = reader
+                .lines()
+                .map(|result| result.unwrap())
+                .take_while(|line| !line.is_empty())
+                .collect();
+            println!("Data read: {:?}", http_request);
+        },
+        ConnectionState::Closed => (),
+        _ => ()
+    }
+}
+
+
+pub fn send_state(connection: &mut Connection, data: String){
+
+    match  connection.status {
+        ConnectionState::WsOpen => {
+            match connection.connection.write(data.as_bytes()){
+                Ok(bytes)=> { println!("Sent {:?} bytes", bytes); },
+                Err(_)=>{ println!("Error writing bytes to {:?}", connection); }
+            }
+            println!("Data sent: {:?}", data);
+        },
+        ConnectionState::Closed => (),
+        _ => ()
+    }
+}
+
+
+// TODO: Build websocket compatible headers for the provided data
+pub fn build_packet(connection: &Connection, data: String){
+
 }

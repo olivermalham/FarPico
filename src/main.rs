@@ -39,16 +39,19 @@ fn main() {
             Err(e) => panic!("encountered IO error: {}", e),
         }
 
-        // println!("Client list: {:?}", connections);
-
-        // Handle connection state changes as required
+        // Read data from connections
         for client in &mut connections {
-            far_pico::handle_connection(client);
+            // TODO: Gather all action strings from connected clients
+            far_pico::gather_actions(client);
         }
 
         // Process any action strings received from the clients
 
         // Send HAL state updates
+        for client in &mut connections {
+            // TODO: Send JSON serialised state
+            far_pico::send_state(client, "Wibble".to_string());
+        }
     }
 }
 
