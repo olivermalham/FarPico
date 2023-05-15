@@ -14,13 +14,81 @@ enum ConnectionState {
     WsOpen
 }
 
-
 #[derive(Debug)]
 pub struct Connection {
     connection: TcpStream,
     status: ConnectionState,
     path: String,
     key: String
+}
+
+#[derive(Debug)]
+pub struct WsPacket {
+    fin: bool,
+    opcode: u8,
+    mask: bool,
+    payload_len: u64,
+    mask_key: u32,
+    // payload: [u8],
+}
+
+
+pub fn new_packet(raw_data: &[u8], length: u64) -> WsPacket {
+    /*0               1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-------+-+-------------+-------------------------------+
+     |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+     |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+     |N|V|V|V|       |S|             |   (if payload len==126/127)   |
+     | |1|2|3|       |K|             |                               |
+     +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+     |     Extended payload length continued, if payload len == 127  |
+     + - - - - - - - - - - - - - - - +-------------------------------+
+     |                               |Masking-key, if MASK set to 1  |
+     +-------------------------------+-------------------------------+
+     | Masking-key (continued)       |          Payload Data         |
+     +-------------------------------- - - - - - - - - - - - - - - - +
+     :                     Payload Data continued ...                :
+     + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     |                     Payload Data continued ...                |
+     +---------------------------------------------------------------+*/
+
+    let mut payload_length: u64 = 0;
+    let payload_byte = raw_data[0] & 0b01111111;
+    match payload_byte {
+        127 => { payload_length = (raw_data[2] << 8 + raw_data[3]) as u64 },
+        128 => { payload_length = (raw_data[4] << 56
+                                 + raw_data[5] << 48
+                                 + raw_data[6] << 40
+                                 + raw_data[7] << 32
+                                 + raw_data[8] << 24
+                                 + raw_data[9] << 16
+                                 + raw_data[9] << 8
+                                 + raw_data[10]) as u64 },
+        _ => { payload_length = payload_byte as u64 }
+    }
+
+    let packet = WsPacket{
+        fin: ((raw_data[0] & 0b1000000) != 0),
+        opcode: (raw_data[0] & 0b00001111),
+        mask: ((raw_data[0] & 0b1000000) != 0),
+        payload_len: payload_length,
+        mask_key: (raw_data[4] << 24 + raw_data[5] << 16 + raw_data[6] << 8 + raw_data[7]) as u32,
+        // payload = raw_data[].
+
+    };
+    return packet;
+
+}
+
+
+pub fn build_packet<'p>() -> &'p [u8] {
+    let packet: &[u8] = [0b10000001, 6,          0b00000000, 0b00000000,
+                         0b00000000, 0b00000000, 0b00000000, 0b00000000,
+                         0b00000000, 0b00000000, 0b00000000, 0b00000000,
+                         0b00000000, 0b00000000, 'h' as u8,  'h' as u8,
+                         'h' as u8,  'h' as u8,  'h' as u8,  'h' as u8].as_slice();
+    packet
 }
 
 
@@ -172,10 +240,4 @@ pub fn send_state(connection: &mut Connection, data: String){
         ConnectionState::Closed => (),
         _ => ()
     }
-}
-
-
-// TODO: Build websocket compatible headers for the provided data
-pub fn build_packet(connection: &Connection, data: String){
-
 }
