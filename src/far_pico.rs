@@ -1,114 +1,66 @@
-use std::net::{TcpStream, Shutdown};
-use std::io::BufReader;
+use std::net::TcpStream;
 use std::io::prelude::*;
+use std::num::IntErrorKind::Empty;
+use rust_embed::RustEmbed;
+
+
+// Constants
+const HTML_OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+const JSON_OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n";
+const NOT_FOUND:        &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
+const INTERNAL_ERROR:   &str = "HTTP/1.1 500 INTERNAL ERROR\r\n\r\n";
 
 
 
-#[derive(Debug)]
-enum ConnectionState {
-    New,
-    GET,
-    PUT,
-}
-
-#[derive(Debug)]
-pub struct Connection {
-    connection: TcpStream,
-    status: ConnectionState,
-    path: String,
-    key: String,
-}
+// Pack the client side files into the executable
+#[derive(RustEmbed)]
+#[folder = "static/"]
+struct StaticAsset;
 
 
-pub fn new(new_connection: TcpStream) -> Connection {
-    Connection {
-        connection: new_connection,
-        status: ConnectionState::New,
-        path: "".to_string(),
-        key: "".to_string()
+
+pub fn process_connection(mut stream: TcpStream) {
+    let mut buffer = [0; 1024];
+    let mut request = String::new();
+
+    match stream.read(&mut buffer) {
+        Ok(size) => {
+            request.push_str(String::from_utf8_lossy(&buffer[..size]).as_ref());
+
+            let (status_line, content) = match &*request {
+                request_contents if request_contents.starts_with("GET /farpi") => handle_state_request(request_contents),
+                request_contents if request_contents.starts_with("GET /") => handle_static_request(request_contents),
+                request_contents if request_contents.starts_with("PUT /farpi") => handle_update_request(request_contents),
+                _ => (NOT_FOUND.to_string(), "404 not found".to_string()),
+            };
+
+            stream.write_all(format!("{}{}", status_line, content).as_bytes()).unwrap();
+        }
+        Err(e) => eprintln!("Unable to read stream: {}", e),
     }
 }
 
 
-pub fn process_connection(tcp_connection: TcpStream){
+fn handle_static_request(request: &str) -> (String, String){
 
-    let mut connection : Connection = read_request(new(tcp_connection));
+    let path_parts: Vec<_> = request.split(" ").collect();
+    let trimmed_path = &path_parts[1][1..];
+    println!("{:?}", trimmed_path);
 
-    println!("New connection:\n {:?}", connection);
-
-    // Determine connection type
-    match connection.status {
-        // GET request, so send the current state
-        ConnectionState::GET => {
-            println!("GET request");
-            connection.connection.write_all(html_response()).unwrap();
-            connection.connection.shutdown(Shutdown::Both).expect("shutdown call failed");
-        }
-        // PUT request, so process as an action string / RPC call from the client
-        ConnectionState::PUT => {
-            println!("PUT request");
-            connection.connection.shutdown(Shutdown::Both).expect("shutdown call failed");
-        }
-        _ => ()
+    match StaticAsset::get(trimmed_path) {
+        Some(asset) => (HTML_OK_RESPONSE.to_string(), std::str::from_utf8(asset.data.as_ref()).unwrap().to_string()),
+        None => (NOT_FOUND.to_string(), "{\"json\":\"response\"}".to_string())
     }
 }
 
 
-fn read_request(mut connection: Connection) -> Connection {
-    let reader = BufReader::new(&mut connection.connection);
-    let http_request: Vec<_> = reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+fn handle_state_request(request: &str) -> (String, String){
 
-    for header in &http_request {
-        match header.split_once(':') {
-            Some((key, value)) => {
-                match key.trim().to_uppercase().as_str(){
-                    _ => ()
-                }
-            }
-            None => {
-                // Not a header string, check if it is an HTTP GET action
-                if header.to_uppercase().starts_with("GET") {
-                    connection.status = ConnectionState::GET;
-                    let path_parts: Vec<_> = header.split(" ").collect();
-                    connection.path = path_parts[1].to_string();
-
-                } else {
-                    println!("No header, not a GET");
-                }
-            }
-        }
-    }
-    return connection;
+    (JSON_OK_RESPONSE.to_string(), "{\"json\":\"response\"}".to_string())
 }
 
 
-fn html_response() -> &'static [u8]{
-r#"HTTP/1.1 200 OK
+fn handle_update_request(request: &str) -> (String, String){
 
-<!DOCTYPE html>
-<html lang="en-US">
-
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FarPico</title>
-<script>
-    // let webSocket = new WebSocket('ws://localhost:7878/farpi');
-    // webSocket.onmessage = function(e) { console.log(e); webSocket.send(e);}
-</script>
-</head>
-
-<body>
-FarPico
-</body>
-</html>"#.as_bytes()
-}
-
-
-pub fn send_state(connection: &mut Connection, data: String){
-
+    (JSON_OK_RESPONSE.to_string(), "{\"json\":\"update response\"}".to_string())
 }
