@@ -1,19 +1,17 @@
 [package]
-name = "FarPico"
+name = "far_pico"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# Postcard for (de)serialsing JSON
-postcard = "1.0.0"
-# Disable default-features to support no-std targets
-serde = { version = "1.0.*", default-features = false }
-
+serde = {version="1.0.163", features = ["derive"] }
+serde_json = "1.0.96"
 rust-embed = "6.6.1"
 
 [profile.release]
 # All settings to reduce size of the binary for embedded usage.
-# Might be overkill, probably dominated by the size of the static assets
+# Might be overkill, probably dominated by the size of the static assets.
+# Will need to see if I need to care more about RAM constraints
 strip = true
 codegen-units = 1
 lto = true

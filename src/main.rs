@@ -21,17 +21,15 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
     listener.set_nonblocking(true).expect("Failed call to set_nonblocking");
 
-    /* To think about:
-    Need a HAL. How to handle? Traits probably the best bet, but might be a little advanced for
-    me at the moment.
-    */
+    /* Build the HAL structure */
+    let hal = crawl::build_hal();
 
     // Infinite loop
     loop {
         // Create new connection object if a client waiting
         match listener.accept() {
             Ok((stream, _addr)) => {
-                process_connection(stream);
+                process_connection(stream, &hal);
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 // Non-blocking means we get this error when no new connections are available

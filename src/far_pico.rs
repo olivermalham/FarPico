@@ -1,7 +1,7 @@
 use std::net::TcpStream;
 use std::io::prelude::*;
 use rust_embed::RustEmbed;
-
+use crate::hal::Hal;
 
 
 // Pack the client side files into the executable
@@ -10,8 +10,7 @@ use rust_embed::RustEmbed;
 struct StaticAsset;
 
 
-
-pub fn process_connection(mut stream: TcpStream) {
+pub fn process_connection(mut stream: TcpStream, hal: &Hal) {
     let mut buffer = [0; 1024];
     let mut request = String::new();
 
@@ -20,10 +19,10 @@ pub fn process_connection(mut stream: TcpStream) {
             request.push_str(String::from_utf8_lossy(&buffer[..size]).as_ref());
 
             match &*request {
-                request_contents if request_contents.starts_with("GET /farpi") => handle_state_request(stream, request_contents),
-                request_contents if request_contents.starts_with("GET ") => handle_static_request(stream, request_contents),
-                request_contents if request_contents.starts_with("PUT /farpi") => handle_update_request(stream, request_contents),
-                request_contents => handle_not_found(stream, request_contents),
+                r if r.starts_with("GET /farpi") => handle_state_request(stream, hal, r),
+                r if r.starts_with("GET ") => handle_static_request(stream, r),
+                r if r.starts_with("PUT /farpi") => handle_update_request(stream, hal, r),
+                r => handle_not_found(stream, r),
             };
         }
         Err(e) => eprintln!("Unable to read stream: {}", e),
@@ -38,15 +37,15 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
     println!("{:?}", trimmed_path);
 
     let content_type = match &trimmed_path {
-        trimmed_path if trimmed_path.ends_with(".html") => "text/html",
-        trimmed_path if trimmed_path.ends_with(".js") => "text/javascript",
-        trimmed_path if trimmed_path.ends_with(".css") => "text/css",
-        trimmed_path if trimmed_path.ends_with(".json") => "application/json",
-        trimmed_path if trimmed_path.ends_with(".jpg") => "image/jpeg",
-        trimmed_path if trimmed_path.ends_with(".jpeg") => "image/jpeg",
-        trimmed_path if trimmed_path.ends_with(".gif") => "image/gif",
-        trimmed_path if trimmed_path.ends_with(".png") => "image/png",
-        _ => "text/html" // Default to HTML text
+        tp if tp.ends_with(".html") => "text/html",
+        tp if tp.ends_with(".js") => "text/javascript",
+        tp if tp.ends_with(".css") => "text/css",
+        tp if tp.ends_with(".json") => "application/json",
+        tp if tp.ends_with(".jpg") => "image/jpeg",
+        tp if tp.ends_with(".jpeg") => "image/jpeg",
+        tp if tp.ends_with(".gif") => "image/gif",
+        tp if tp.ends_with(".png") => "image/png",
+        _ => "text/html"
     };
 
     match StaticAsset::get(trimmed_path) {
@@ -62,18 +61,19 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
 
 
 // Return the HAL state serialised as JSON. Request data isn't required, so ignored
-fn handle_state_request(mut stream: TcpStream, _: &str) {
+fn handle_state_request(mut stream: TcpStream, hal: &Hal, _: &str) {
     stream.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n").as_bytes()).unwrap();
+    stream.write(hal.to_json().as_bytes()).unwrap();
 }
 
 
 // Handles action calls. Sends the updated state to the client
-fn handle_update_request(mut stream: TcpStream, request: &str) {
+fn handle_update_request(stream: TcpStream, hal: &Hal, request: &str) {
 
-    handle_state_request(stream, request);
+    handle_state_request(stream, hal,request);
 }
 
 // Basic 404 response handler
-fn handle_not_found(mut stream: TcpStream, request: &str){
+fn handle_not_found(mut stream: TcpStream, _: &str){
     stream.write("HTTP/1.1 404 NOT FOUND\r\n\r\n".as_bytes()).unwrap();
 }
