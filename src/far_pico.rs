@@ -1,14 +1,6 @@
 use std::net::TcpStream;
 use std::io::prelude::*;
-use std::num::IntErrorKind::Empty;
 use rust_embed::RustEmbed;
-
-
-// Constants
-const HTML_OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
-const JSON_OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n";
-const NOT_FOUND:        &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
-const INTERNAL_ERROR:   &str = "HTTP/1.1 500 INTERNAL ERROR\r\n\r\n";
 
 
 
@@ -27,40 +19,61 @@ pub fn process_connection(mut stream: TcpStream) {
         Ok(size) => {
             request.push_str(String::from_utf8_lossy(&buffer[..size]).as_ref());
 
-            let (status_line, content) = match &*request {
-                request_contents if request_contents.starts_with("GET /farpi") => handle_state_request(request_contents),
-                request_contents if request_contents.starts_with("GET /") => handle_static_request(request_contents),
-                request_contents if request_contents.starts_with("PUT /farpi") => handle_update_request(request_contents),
-                _ => (NOT_FOUND.to_string(), "404 not found".to_string()),
+            match &*request {
+                request_contents if request_contents.starts_with("GET /farpi") => handle_state_request(stream, request_contents),
+                request_contents if request_contents.starts_with("GET ") => handle_static_request(stream, request_contents),
+                request_contents if request_contents.starts_with("PUT /farpi") => handle_update_request(stream, request_contents),
+                request_contents => handle_not_found(stream, request_contents),
             };
-
-            stream.write_all(format!("{}{}", status_line, content).as_bytes()).unwrap();
         }
         Err(e) => eprintln!("Unable to read stream: {}", e),
     }
 }
 
 
-fn handle_static_request(request: &str) -> (String, String){
+fn handle_static_request(mut stream: TcpStream, request: &str){
 
     let path_parts: Vec<_> = request.split(" ").collect();
     let trimmed_path = &path_parts[1][1..];
     println!("{:?}", trimmed_path);
 
+    let content_type = match &trimmed_path {
+        trimmed_path if trimmed_path.ends_with(".html") => "text/html",
+        trimmed_path if trimmed_path.ends_with(".js") => "text/javascript",
+        trimmed_path if trimmed_path.ends_with(".css") => "text/css",
+        trimmed_path if trimmed_path.ends_with(".json") => "application/json",
+        trimmed_path if trimmed_path.ends_with(".jpg") => "image/jpeg",
+        trimmed_path if trimmed_path.ends_with(".jpeg") => "image/jpeg",
+        trimmed_path if trimmed_path.ends_with(".gif") => "image/gif",
+        trimmed_path if trimmed_path.ends_with(".png") => "image/png",
+        _ => "text/html" // Default to HTML text
+    };
+
     match StaticAsset::get(trimmed_path) {
-        Some(asset) => (HTML_OK_RESPONSE.to_string(), std::str::from_utf8(asset.data.as_ref()).unwrap().to_string()),
-        None => (NOT_FOUND.to_string(), "{\"json\":\"response\"}".to_string())
-    }
+        Some(asset) => {
+            stream.write(("HTTP/1.1 200 OK\r\nContent-Type: ".to_string() + content_type + "\r\n\r\n").as_bytes()).unwrap();
+            stream.write(asset.data.as_ref()).unwrap();
+        },
+        None => {
+            handle_not_found(stream, request);
+        }
+    };
 }
 
 
-fn handle_state_request(request: &str) -> (String, String){
-
-    (JSON_OK_RESPONSE.to_string(), "{\"json\":\"response\"}".to_string())
+// Return the HAL state serialised as JSON. Request data isn't required, so ignored
+fn handle_state_request(mut stream: TcpStream, _: &str) {
+    stream.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n").as_bytes()).unwrap();
 }
 
 
-fn handle_update_request(request: &str) -> (String, String){
+// Handles action calls. Sends the updated state to the client
+fn handle_update_request(mut stream: TcpStream, request: &str) {
 
-    (JSON_OK_RESPONSE.to_string(), "{\"json\":\"update response\"}".to_string())
+    handle_state_request(stream, request);
+}
+
+// Basic 404 response handler
+fn handle_not_found(mut stream: TcpStream, request: &str){
+    stream.write("HTTP/1.1 404 NOT FOUND\r\n\r\n".as_bytes()).unwrap();
 }

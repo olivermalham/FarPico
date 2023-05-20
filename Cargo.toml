@@ -3,17 +3,18 @@ name = "FarPico"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 # Postcard for (de)serialsing JSON
 postcard = "1.0.0"
-
-# By default, `serde` has the `std` feature enabled, which makes it unsuitable for embedded targets
-# disabling default-features fixes this
+# Disable default-features to support no-std targets
 serde = { version = "1.0.*", default-features = false }
 
-sha1 = "0.10.5"
-base64 = "0.21.0"
 rust-embed = "6.6.1"
 
+[profile.release]
+# All settings to reduce size of the binary for embedded usage.
+# Might be overkill, probably dominated by the size of the static assets
+strip = true
+codegen-units = 1
+lto = true
+opt-level = "z"

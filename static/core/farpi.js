@@ -20,6 +20,7 @@ class FarPi extends HTMLElement {
 
     // Opens a websocket connection to the server, sets up the message handler and finds and configures all
     // FarPi child elements in the DOM
+    // TODO! UPDATE THIS TO SUPPORT HTTP AS WELL AS WEBSOCKETS!!! Do that in the main FarPi-Server codebase
     connectedCallback() {
         setTimeout(() => {
 
@@ -33,32 +34,32 @@ class FarPi extends HTMLElement {
                 address = `ws://${window.location.hostname}:8888/farpi`;
                 console.log("Defaulting FarPi Address to " + address);
             }
-
-            this.socket = new WebSocket(address);
-            console.log("FarPi connected to " + address);
-
-            // Get all elements with the _farPiComponent class, automatically added by FarPiElement
-            farPiControls = this.getElementsByClassName("_farPiComponent");
-
-            // Handler for incoming state updates
-            this.socket.onmessage = (e) => {
-                let state = JSON.parse(e.data);
-                for (let i = 0; i < farPiControls.length; i++) {
-                    farPiControls[i].farPiUpdate(state);
-                }
-            }
-
-            // Handler for the websocket closing. Just kills the heartbeat animations
-            this.socket.onclose = (e) => {
-                let heartbeat = document.getElementsByTagName("farpi-heartbeat")[0];
-                heartbeat.disconnected();
-            }
-
-            // Switch to fullscreen if the parameter is set
-            // FIXME: This seems to be blocked by Chrome
-            if(this.getAttribute("fullscreen") != null){
-                this.fullscreen();
-            }
+            //
+            // this.socket = new WebSocket(address);
+            // console.log("FarPi connected to " + address);
+            //
+            // // Get all elements with the _farPiComponent class, automatically added by FarPiElement
+            // farPiControls = this.getElementsByClassName("_farPiComponent");
+            //
+            // // Handler for incoming state updates
+            // this.socket.onmessage = (e) => {
+            //     let state = JSON.parse(e.data);
+            //     for (let i = 0; i < farPiControls.length; i++) {
+            //         farPiControls[i].farPiUpdate(state);
+            //     }
+            // }
+            //
+            // // Handler for the websocket closing. Just kills the heartbeat animations
+            // this.socket.onclose = (e) => {
+            //     let heartbeat = document.getElementsByTagName("farpi-heartbeat")[0];
+            //     heartbeat.disconnected();
+            // }
+            //
+            // // Switch to fullscreen if the parameter is set
+            // // FIXME: This seems to be blocked by Chrome
+            // if(this.getAttribute("fullscreen") != null){
+            //     this.fullscreen();
+            // }
         });
     }
 
