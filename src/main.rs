@@ -6,12 +6,11 @@ use std::io;
 use std::net::TcpListener;
 use crate::far_pico::process_connection;
 
-
 /*
 
 FarPico - FarPi compatible server written in pure Rust. Designed to be as lightweight as
 possible so that it can run on microcontrollers as long as they have some kind of TCP handling
-stack / functionality, such as RaspberryPi Pico W, or Pico with external wifi module like ESP-07.
+stack / functionality, such as RaspberryPi Pico W, Pico with external wifi module, ESP32 module etc.
 Implements basic HTTP version of the FarPI interface, web sockets and the binary comms are too
 much for my level of Rust skills atm.
 
@@ -21,8 +20,8 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
     listener.set_nonblocking(true).expect("Failed call to set_nonblocking");
 
-    /* Build the HAL structure */
-    let hal = crawl::build_hal();
+    // Build the HAL structure - update this line to use a project-specific HAL
+    let hal = hal::build_hal();
 
     // Infinite loop
     loop {

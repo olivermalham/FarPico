@@ -36,14 +36,19 @@ use serde::Serialize;
 */
 
 
-#[derive(Serialize)]
-pub struct Gpio {
-    pin: u8,
-    value: bool
+pub trait HalComponent {
+    fn dispatch(&self, action: &String);
 }
 
-impl Gpio {
-    pub fn action(action_string: &String){
+#[derive(Serialize)]
+pub struct Gpio {
+    pub pin: u8,
+    pub state: bool,
+    pub actions: Vec<String>
+}
+
+impl HalComponent for Gpio {
+    fn dispatch(&self, action_string: &String){
         println!("GPIO Action {}", action_string);
     }
 }
@@ -51,25 +56,41 @@ impl Gpio {
 /*
     HAL structure. Use lists of each component type
  */
-pub struct Hal {
-    gpio: HashMap<String, Gpio>,
-    error: String,
-    message: String
+#[derive(Serialize)]
+pub struct ExampleHal {
+    pub gpio00: Gpio,
+    pub gpio01: Gpio,
+    pub gpio02: Gpio,
+    pub gpio03: Gpio,
+    pub error: String,
+    pub message: String
 }
 
-impl Hal {
+pub trait HalFuncs {
+    fn to_json(&self) -> String;
+    fn dispatch(&self, component: &String, action: &String, args: &Vec<String>);
+}
 
-    pub fn new() -> Hal {
-        Hal {
-            gpio: HashMap::new(),
-            error: "".to_string(),
-            message: "".to_string()
-        }
-    }
+impl HalFuncs for ExampleHal {
 
-    pub fn to_json(&self) -> String {
+    fn to_json(&self) -> String {
         // Build JSON state string here
-        "Wibble".to_string()
+        serde_json::to_string(self).ok().unwrap()
     }
 
+    fn dispatch(&self, component: &String, action: &String, args: &Vec<String>) {
+        todo!("Add Result() for returning error / success etc")
+    }
+}
+
+pub fn build_hal() -> ExampleHal {
+    println!("Building example HAL");
+    ExampleHal {
+        gpio00: Gpio{pin:0x01, state:false, actions:vec!["bcm01.action_set".to_string(), "bcm01.action_toggle".to_string()]},
+        gpio01: Gpio{pin:0x02, state:false, actions:vec!["bcm02.action_set".to_string(), "bcm02.action_toggle".to_string()]},
+        gpio02: Gpio{pin:0x03, state:false, actions:vec!["bcm03.action_set".to_string(), "bcm03.action_toggle".to_string()]},
+        gpio03: Gpio{pin:0x04, state:false, actions:vec!["bcm04.action_set".to_string(), "bcm04.action_toggle".to_string()]},
+        error: "".to_string(),
+        message: "".to_string()
+    }
 }

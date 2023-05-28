@@ -1,7 +1,7 @@
 use std::net::TcpStream;
 use std::io::prelude::*;
 use rust_embed::RustEmbed;
-use crate::hal::Hal;
+use crate::hal::{ExampleHal, HalFuncs};
 
 
 // Pack the client side files into the executable
@@ -10,7 +10,7 @@ use crate::hal::Hal;
 struct StaticAsset;
 
 
-pub fn process_connection(mut stream: TcpStream, hal: &Hal) {
+pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
     let mut buffer = [0; 1024];
     let mut request = String::new();
 
@@ -61,14 +61,14 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
 
 
 // Return the HAL state serialised as JSON. Request data isn't required, so ignored
-fn handle_state_request(mut stream: TcpStream, hal: &Hal, _: &str) {
+fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &T, _: &str) {
     stream.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n").as_bytes()).unwrap();
     stream.write(hal.to_json().as_bytes()).unwrap();
 }
 
 
 // Handles action calls. Sends the updated state to the client
-fn handle_update_request(stream: TcpStream, hal: &Hal, request: &str) {
+fn handle_update_request<T: HalFuncs>(stream: TcpStream, hal: &T, request: &str) {
 
     handle_state_request(stream, hal,request);
 }
