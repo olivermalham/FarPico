@@ -3,7 +3,6 @@ use serde::Serialize;
 
 
 /*
-
     So, how to represent the hardware in a way that can be easily serialised into JSON, and can
     support the simple RPC mechanism used by FarPi? What is the Rust way of doing things? My Python
     implementation is heavily object orientated, and makes heavy use of Python's introspection
@@ -20,10 +19,6 @@ use serde::Serialize;
     State structs only need to be serializable, state is never sent to the server from the client,
     actions are, which are much simpler.
 
-    Use one hashmap per type of component supported. FarPi doesn't support nested components in the
-    HAL, so that should be OK. Serialising the entire state would mean serialising the dict for
-    each component type, then combining the json dicts and adding the HAL level fields.
-
     Application specific function will populate the hal structure after an empty one is created,
     so there should be no need to mess with the code in here unless adding a new component type.
 
@@ -32,7 +27,6 @@ use serde::Serialize;
     the component name. Once found, call the action handled with the request arguments. Assumes that
     component names are unique! (Which they are in FarPi Server as they map directly to the HAL object
     scope).
-
 */
 
 
@@ -42,7 +36,8 @@ pub trait HalComponent {
 
 #[derive(Serialize)]
 pub struct Gpio {
-    pub pin: u8,
+    #[serde(skip_serializing)]
+    pub pin: u8,  // TODO: This field should be a Pin struct from the microcontroller HAL!
     pub state: bool,
     pub actions: Vec<String>
 }
@@ -58,12 +53,13 @@ impl HalComponent for Gpio {
  */
 #[derive(Serialize)]
 pub struct ExampleHal {
-    pub gpio00: Gpio,
-    pub gpio01: Gpio,
-    pub gpio02: Gpio,
-    pub gpio03: Gpio,
+    pub bcm00: Gpio,
+    pub bcm01: Gpio,
+    pub bcm02: Gpio,
+    pub bcm03: Gpio,
     pub error: String,
-    pub message: String
+    pub message: String,
+    pub cycle: i32
 }
 
 pub trait HalFuncs {
@@ -86,11 +82,12 @@ impl HalFuncs for ExampleHal {
 pub fn build_hal() -> ExampleHal {
     println!("Building example HAL");
     ExampleHal {
-        gpio00: Gpio{pin:0x01, state:false, actions:vec!["bcm01.action_set".to_string(), "bcm01.action_toggle".to_string()]},
-        gpio01: Gpio{pin:0x02, state:false, actions:vec!["bcm02.action_set".to_string(), "bcm02.action_toggle".to_string()]},
-        gpio02: Gpio{pin:0x03, state:false, actions:vec!["bcm03.action_set".to_string(), "bcm03.action_toggle".to_string()]},
-        gpio03: Gpio{pin:0x04, state:false, actions:vec!["bcm04.action_set".to_string(), "bcm04.action_toggle".to_string()]},
-        error: "".to_string(),
-        message: "".to_string()
+        bcm00: Gpio{pin:0x01, state:false, actions:vec!["bcm00.action_set".to_string(), "bcm00.action_toggle".to_string()]},
+        bcm01: Gpio{pin:0x02, state:false, actions:vec!["bcm01.action_set".to_string(), "bcm01.action_toggle".to_string()]},
+        bcm02: Gpio{pin:0x03, state:false, actions:vec!["bcm02.action_set".to_string(), "bcm02.action_toggle".to_string()]},
+        bcm03: Gpio{pin:0x04, state:false, actions:vec!["bcm03.action_set".to_string(), "bcm03.action_toggle".to_string()]},
+        error: "No error here!".to_string(),
+        message: "Using ExampleHAL".to_string(),
+        cycle: 0
     }
 }

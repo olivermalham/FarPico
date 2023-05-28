@@ -4,6 +4,7 @@ mod crawl;
 
 use std::io;
 use std::net::TcpListener;
+use std::string::ToString;
 use crate::far_pico::process_connection;
 
 /*
@@ -16,8 +17,13 @@ much for my level of Rust skills atm.
 
 */
 
+// Use "0.0.0.0" for the address to bind to whatever the host address is
+const SERVER_ADDRESS: &str = "0.0.0.0:7878";
+
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    println!("FarPico Server {}", env!("CARGO_PKG_VERSION"));
+    println!("Starting on {}", SERVER_ADDRESS);
+    let listener = TcpListener::bind(SERVER_ADDRESS).unwrap();
     listener.set_nonblocking(true).expect("Failed call to set_nonblocking");
 
     // Build the HAL structure - update this line to use a project-specific HAL

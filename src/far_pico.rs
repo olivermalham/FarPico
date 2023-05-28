@@ -11,7 +11,7 @@ struct StaticAsset;
 
 
 pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 1024];  // Fixed size buffer for incoming requests
     let mut request = String::new();
 
     match stream.read(&mut buffer) {
@@ -32,9 +32,9 @@ pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
 
 fn handle_static_request(mut stream: TcpStream, request: &str){
 
-    let path_parts: Vec<_> = request.split(" ").collect();
-    let trimmed_path = &path_parts[1][1..];
-    println!("{:?}", trimmed_path);
+    let path_parts: Vec<&str> = request.split(" ").collect();
+    let mut trimmed_path = &path_parts[1][1..];
+    println!("{} - {}", stream.peer_addr().unwrap(), trimmed_path);
 
     let content_type = match &trimmed_path {
         tp if tp.ends_with(".html") => "text/html",
@@ -47,6 +47,10 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
         tp if tp.ends_with(".png") => "image/png",
         _ => "text/html"
     };
+
+    if trimmed_path == "" {
+        trimmed_path = "index.html";
+    }
 
     match StaticAsset::get(trimmed_path) {
         Some(asset) => {
