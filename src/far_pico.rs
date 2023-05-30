@@ -1,7 +1,7 @@
 use std::net::TcpStream;
 use std::io::prelude::*;
 use rust_embed::RustEmbed;
-use crate::hal::{ExampleHal, HalFuncs};
+use crate::hal::HalFuncs;
 
 
 // Pack the client side files into the executable

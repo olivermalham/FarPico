@@ -1,10 +1,10 @@
 mod hal;
 mod far_pico;
 mod crawl;
+mod example_hal;
 
 use std::io;
 use std::net::TcpListener;
-use std::string::ToString;
 use crate::far_pico::process_connection;
 
 /*
@@ -27,7 +27,7 @@ fn main() {
     listener.set_nonblocking(true).expect("Failed call to set_nonblocking");
 
     // Build the HAL structure - update this line to use a project-specific HAL
-    let hal = hal::build_hal();
+    let hal = example_hal::build_hal();
 
     // Infinite loop
     loop {
