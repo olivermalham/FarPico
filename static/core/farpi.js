@@ -9,58 +9,116 @@ class FarPi extends HTMLElement {
     // Web-socket connection to the server
     socket = undefined
 
+    // If true, use HTTP for communication with the server, rather than websockets
+    http = false;
+    address = ""
+
     // Send a message back to the server
     sendMsg() {
         this.socket.send(document.getElementById('msg').value);
     }
 
-    action(target, args) {
-        this.socket.send("{\"action\":\"" + target + "\", \"parameters\":{" + args + "}}");
+    async action(target, args) {
+        let action_string = "{\"action\":\"" + target + "\", \"parameters\":{" + args + "}}";
+
+        if(this.http){
+            console.log("Sending POST request to " + this.address);
+            const response = await fetch(this.address, {
+                                                          method: 'POST',
+                                                          headers: {
+                                                              'Accept': 'application/json',
+                                                              'Content-Type': 'application/json'
+                                                          },
+                                                          body: action_string,
+                                                      });
+            response.json().then(data => {
+                console.log(data);
+                for (let i = 0; i < farPiControls.length; i++) {
+                    farPiControls[i].farPiUpdate(data);
+                }
+            });
+        } else {
+            this.socket.send(action_string);
+        }
+    }
+
+    async fetch_state() {
+        const response = await fetch(farPiRoot.address, { method: 'GET',
+                                                                   headers: {
+                                                                      'Accept': 'application/json',
+                                                                      'Content-Type': 'application/json'}                                              });
+        response.json().then(data => {
+            console.log(data);
+            for (let i = 0; i < farPiControls.length; i++) {
+                farPiControls[i].farPiUpdate(data);
+            }
+        });
+        setTimeout(farPiRoot.fetch_state, 100);
     }
 
     // Opens a websocket connection to the server, sets up the message handler and finds and configures all
     // FarPi child elements in the DOM
-    // TODO! UPDATE THIS TO SUPPORT HTTP AS WELL AS WEBSOCKETS!!! Do that in the main FarPi-Server codebase
     connectedCallback() {
         setTimeout(() => {
-
             // Assume we only have one farpi-root element
             farPiRoot = this;
 
+            // Get all elements with the _farPiComponent class, automatically added by FarPiElement
+            farPiControls = this.getElementsByClassName("_farPiComponent");
+
             let address = this.getAttribute("server");
+            let method = this.getAttribute("method");
+
+            if(method && method === "http"){
+                this.http = true;
+                console.log("Using HTTP mode")
+            }
 
             // If no FarPi server specified, default to same as the webserver
             if(!address){
-                address = `ws://${window.location.hostname}:8888/farpi`;
-                console.log("Defaulting FarPi Address to " + address);
+                if(this.http){
+                    this.address = `http://${window.location.hostname}:8888/farpi`;
+                } else {
+                    this.address = `ws://${window.location.hostname}:8888/farpi`;
+                }
+                console.log("Defaulting FarPi Address to " + this.address);
+            } else {
+                this.address = address;
             }
-            //
-            // this.socket = new WebSocket(address);
-            // console.log("FarPi connected to " + address);
-            //
-            // // Get all elements with the _farPiComponent class, automatically added by FarPiElement
-            // farPiControls = this.getElementsByClassName("_farPiComponent");
-            //
-            // // Handler for incoming state updates
-            // this.socket.onmessage = (e) => {
-            //     let state = JSON.parse(e.data);
-            //     for (let i = 0; i < farPiControls.length; i++) {
-            //         farPiControls[i].farPiUpdate(state);
-            //     }
-            // }
-            //
-            // // Handler for the websocket closing. Just kills the heartbeat animations
-            // this.socket.onclose = (e) => {
-            //     let heartbeat = document.getElementsByTagName("farpi-heartbeat")[0];
-            //     heartbeat.disconnected();
-            // }
-            //
-            // // Switch to fullscreen if the parameter is set
-            // // FIXME: This seems to be blocked by Chrome
-            // if(this.getAttribute("fullscreen") != null){
-            //     this.fullscreen();
-            // }
+
+            if(this.http) {
+                // If using HTTP, poll the server for state updates
+                setTimeout(this.fetch_state, 5000);
+            } else {
+                this.configure_ws();
+            }
+
+            // Switch to fullscreen if the parameter is set
+            // FIXME: This seems to be blocked by Chrome
+            if(this.getAttribute("fullscreen") != null){
+                this.fullscreen();
+            }
         });
+    }
+
+    configure_ws(){
+        this.socket = new WebSocket(this.address);
+        console.log("FarPi connected to " + this.address);
+
+        // Handler for incoming state updates
+        this.socket.onmessage = (e) => {
+            let state = JSON.parse(e.data);
+            for (let i = 0; i < farPiControls.length; i++) {
+                farPiControls[i].farPiUpdate(state);
+            }
+        }
+
+        // Handler for the websocket closing. Just kills the heartbeat animations
+        this.socket.onclose = (e) => {
+            let heartbeat = document.getElementsByTagName("farpi-heartbeat")[0];
+            heartbeat.disconnected();
+        }
+
     }
 
     fullscreen(){

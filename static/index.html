@@ -18,7 +18,7 @@
 
 <body class="w-full h-screen bg-cover bg-center bg-[url('/hexagons.jpg')]">
 
-    <farpi-root>
+    <farpi-root method="http" server="http://127.0.0.1:7878/farpi">
         <farpi-navbar logo="skuttle.png">
             <farpi-tab-list>
                 <farpi-tab-btn tab=0>Control</farpi-tab-btn>
@@ -45,9 +45,9 @@
             <div class="grid grid-cols-1 gap-4 m-4">
                 <farpi-panel>
                     <div class="grid grid-cols-3">
-                        <farpi-guage-round class="col-span-1" source="cpu.load" units="%">CPU Load</farpi-guage-round>
-                        <farpi-guage-round class="col-span-1" source="cpu.temp" scale="1" units="&#8451">CPU Temp</farpi-guage-round>
-                        <farpi-guage-round class="col-span-1" source="cpu.memory" units="%">RAM Used</farpi-guage-round>
+                        <farpi-gauge-round class="col-span-1" source="cpu.load" units="%">CPU Load</farpi-gauge-round>
+                        <farpi-gauge-round class="col-span-1" source="cpu.temp" scale="1" units="&#8451">CPU Temp</farpi-gauge-round>
+                        <farpi-gauge-round class="col-span-1" source="cpu.memory" units="%">RAM Used</farpi-gauge-round>
                     </div>
                 </farpi-panel>
                 <farpi-panel>

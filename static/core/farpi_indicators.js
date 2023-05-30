@@ -65,4 +65,4 @@ class FarPiGaugeRound extends FarPiElement {
 
 
 customElements.define('farpi-led', FarPiLED);
-customElements.define('farpi-guage-round', FarPiGaugeRound);
+customElements.define('farpi-gauge-round', FarPiGaugeRound);
