@@ -13,7 +13,7 @@ impl HalFuncs for CrawlHal {
         serde_json::to_string(self).ok().unwrap()
     }
 
-    fn dispatch(&self, component: &String, action: &String, args: &Vec<String>) {
+    fn dispatch(&self, action: &str) {
         todo!()
     }
 }

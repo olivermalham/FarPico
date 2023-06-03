@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" data-theme="halloween">
+
+<head>
+    <title>Skuttle</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100" rel="stylesheet">
+    <link rel="stylesheet" href="/css/skuttle.css">
+
+    <script src="/core/farpi.js"></script>
+    <script src="/core/farpi_layout.js"></script>
+    <script src="/core/farpi_switches.js"></script>
+    <script src="/core/farpi_indicators.js"></script>
+    <script src="/core/farpi_consoles.js"></script>
+    <script src="/core/farpi_camera.js"></script>
+    <script src="/core/farpi_gamepad.js"></script>
+</head>
+
+<body class="w-full h-screen bg-cover bg-center bg-[url('/hexagons.jpg')]">
+
+    <farpi-root method="http" server="http://127.0.0.1:7878/farpi">
+        <farpi-navbar logo="skuttle.png">
+            <farpi-tab-list>
+                <farpi-tab-btn tab=0>Control</farpi-tab-btn>
+                <farpi-tab-btn tab=1>Sensors</farpi-tab-btn>
+                <farpi-tab-btn tab=2>Console</farpi-tab-btn>
+            </farpi-tab-list>
+            <!-- Add fullscreen toggle button here -->
+            <farpi-gamepad source="motors" period="200">
+                <axis number="1" action="action_run_motor2" range="100" deadband="10"></axis>
+                <axis number="2" action="action_run_motor1" range="100" deadband="10"></axis>
+            </farpi-gamepad>
+            <farpi-heartbeat></farpi-heartbeat>
+        </farpi-navbar>
+
+        <farpi-tab number=0>
+            <div class="grid grid-rows-1 gap-4 m-4">
+                <farpi-panel class="row-span-1 col-span-1">
+                    <farpi-camera-multipart></farpi-camera-multipart>
+                </farpi-panel>
+            </div>
+        </farpi-tab>
+
+        <farpi-tab number=1>
+            <div class="grid grid-cols-1 gap-4 m-4">
+                <farpi-panel>
+                    <div class="grid grid-cols-3">
+                        <farpi-gauge-round class="col-span-1" source="cpu.load" units="%">CPU Load</farpi-gauge-round>
+                        <farpi-gauge-round class="col-span-1" source="cpu.temp" scale="1" units="&#8451">CPU Temp</farpi-gauge-round>
+                        <farpi-gauge-round class="col-span-1" source="cpu.memory" units="%">RAM Used</farpi-gauge-round>
+                    </div>
+                </farpi-panel>
+                <farpi-panel>
+                    <farpi-keypad source="motors">
+                        <mouse_down>
+                            <left action="action_run_motor1">-100</left>
+                            <right action="action_run_motor1">100</right>
+                            <up action="action_run_motor2">-100</up>
+                            <down action="action_run_motor2">100</down>
+                        </mouse_down>
+                        <mouse_up>
+                            <left action="action_run_motor1">0</left>
+                            <right action="action_run_motor1">0</right>
+                            <up action="action_run_motor2">0</up>
+                            <down action="action_run_motor2">0</down>
+                        </mouse_up>
+                    </farpi-keypad>
+                </farpi-panel>
+
+            </div>
+        </farpi-tab>
+
+        <farpi-tab number=2>
+            <div class="grid grid-cols-1 gap-4 m-4">
+                <farpi-panel class="h-[75vh]">
+                    <farpi-console source="commandLine"></farpi-console>
+                </farpi-panel>
+            </div>
+        </farpi-tab>
+
+    </farpi-root>
+
+</body>
+
+</html>

@@ -15,17 +15,20 @@ pub struct ExampleHal {
     pub cycle: i32
 }
 
+
 impl HalFuncs for ExampleHal {
 
     fn to_json(&self) -> String {
-        // Build JSON state string here
         serde_json::to_string(self).ok().unwrap()
     }
 
-    fn dispatch(&self, component: &String, action: &String, args: &Vec<String>) {
-        todo!("Add Result() for returning error / success etc")
+    fn dispatch(&self, action_string: &str) {
+        println!("Action Request {}", action_string);
+        let action: ActionString = serde_json::from_str(action_string).unwrap();
+        println!("ActionString object: {:?}", action);
     }
 }
+
 
 pub fn build_hal() -> ExampleHal {
     println!("Building example HAL");

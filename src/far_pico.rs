@@ -19,9 +19,9 @@ pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
             request.push_str(String::from_utf8_lossy(&buffer[..size]).as_ref());
 
             match &*request {
-                r if r.starts_with("GET /farpi") => handle_state_request(stream, hal, r),
+                r if r.starts_with("GET /farpi") => handle_state_request(stream, hal),
                 r if r.starts_with("GET ") => handle_static_request(stream, r),
-                r if r.starts_with("PUT /farpi") => handle_update_request(stream, hal, r),
+                r if r.starts_with("POST /farpi") => handle_update_request(stream, hal, r),
                 r => handle_not_found(stream, r),
             };
         }
@@ -65,7 +65,7 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
 
 
 // Return the HAL state serialised as JSON. Request data isn't required, so ignored
-fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &T, _: &str) {
+fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
     stream.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n").as_bytes()).unwrap();
     stream.write(hal.to_json().as_bytes()).unwrap();
 }
@@ -73,11 +73,25 @@ fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &T, _: &str) {
 
 // Handles action calls. Sends the updated state to the client
 fn handle_update_request<T: HalFuncs>(stream: TcpStream, hal: &T, request: &str) {
+    // Remove headers from request body
+    let request_parts: Vec<&str> = request.split("\r\n\r\n").collect();
 
-    handle_state_request(stream, hal,request);
+    if request_parts.len() != 2 { return handle_bad_request(stream, request)};
+
+    let request_body = request_parts[1];
+
+    hal.dispatch(request_body);
+    handle_state_request(stream, hal);
 }
 
-// Basic 404 response handler
+
+// 404 - Not Found response handler
 fn handle_not_found(mut stream: TcpStream, _: &str){
     stream.write("HTTP/1.1 404 NOT FOUND\r\n\r\n".as_bytes()).unwrap();
+}
+
+
+// 400 - Bad Reqeust response handler
+fn handle_bad_request(mut stream: TcpStream, _: &str){
+    stream.write("HTTP/1.1 400 BAD REQUEST\r\n\r\n".as_bytes()).unwrap();
 }
