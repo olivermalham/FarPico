@@ -89,11 +89,14 @@ fn handle_update_request<T: HalFuncs>(stream: TcpStream, hal: &mut T, request: &
 
     // Remove headers from request body
     let request_parts: Vec<&str> = request.split("\r\n\r\n").collect();
-    if request_parts.len() != 2 { return handle_bad_request(stream, request)};
+    if request_parts.len() != 2 { return handle_bad_request(stream, request) };
     let request_body = request_parts[1];
 
-    hal.dispatch(target, action, request_body);
-    handle_state_request(stream, hal);
+    match hal.dispatch(target, action, request_body){
+        Ok(_) => handle_state_request(stream, hal),
+        Err(_) => handle_bad_request(stream, request)
+    };
+
 }
 
 

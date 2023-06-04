@@ -1,6 +1,6 @@
 mod hal;
 mod far_pico;
-mod crawl;
+// mod crawl;
 mod example_hal;
 mod hal_gpio;
 

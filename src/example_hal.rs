@@ -24,16 +24,17 @@ impl HalFuncs for ExampleHal {
         serde_json::to_string(self).ok().unwrap()
     }
 
-    fn dispatch(&mut self, target: &str, action: &str, parameter_json: &str) {
+    fn dispatch(&mut self, target: &str, action: &str, parameter_json: &str) -> Result <(), serde_json::error::Error> {
         println!("Action Request {}.{} - {}", target, action, parameter_json);
         // FIXME! This should return OK/Error type
         match target {
-            "bcm00" => self.bcm00.dispatch(action, parameter_json),
-            "bcm01" => self.bcm01.dispatch(action, parameter_json),
-            "bcm02" => self.bcm02.dispatch(action, parameter_json),
-            "bcm03" => self.bcm03.dispatch(action, parameter_json),
+            "bcm00" => self.bcm00.dispatch(action, parameter_json)?,
+            "bcm01" => self.bcm01.dispatch(action, parameter_json)?,
+            "bcm02" => self.bcm02.dispatch(action, parameter_json)?,
+            "bcm03" => self.bcm03.dispatch(action, parameter_json)?,
             _ => ()
         };
+        return Ok(());
     }
 }
 
