@@ -1,5 +1,6 @@
 use serde::Serialize;
 use crate::hal::*;
+use crate::hal_gpio::Gpio;
 
 /*
     Example HAL
@@ -18,14 +19,21 @@ pub struct ExampleHal {
 
 impl HalFuncs for ExampleHal {
 
+    // FIXME: This should really be a default implementation, but can't use Serialise on a trait
     fn to_json(&self) -> String {
         serde_json::to_string(self).ok().unwrap()
     }
 
-    fn dispatch(&self, action_string: &str) {
-        println!("Action Request {}", action_string);
-        let action: ActionString = serde_json::from_str(action_string).unwrap();
-        println!("ActionString object: {:?}", action);
+    fn dispatch(&mut self, target: &str, action: &str, parameter_json: &str) {
+        println!("Action Request {}.{} - {}", target, action, parameter_json);
+        // FIXME! This should return OK/Error type
+        match target {
+            "bcm00" => self.bcm00.dispatch(action, parameter_json),
+            "bcm01" => self.bcm01.dispatch(action, parameter_json),
+            "bcm02" => self.bcm02.dispatch(action, parameter_json),
+            "bcm03" => self.bcm03.dispatch(action, parameter_json),
+            _ => ()
+        };
     }
 }
 

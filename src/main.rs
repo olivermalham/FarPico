@@ -2,6 +2,7 @@ mod hal;
 mod far_pico;
 mod crawl;
 mod example_hal;
+mod hal_gpio;
 
 use std::io;
 use std::net::TcpListener;
@@ -27,14 +28,14 @@ fn main() {
     listener.set_nonblocking(true).expect("Failed call to set_nonblocking");
 
     // Build the HAL structure - update this line to use a project-specific HAL
-    let hal = example_hal::build_hal();
+    let mut hal = example_hal::build_hal();
 
     // Infinite loop
     loop {
         // Create new connection object if a client waiting
         match listener.accept() {
             Ok((stream, _addr)) => {
-                process_connection(stream, &hal);
+                process_connection(stream, &mut hal);
             },
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 // Non-blocking means we get this error when no new connections are available

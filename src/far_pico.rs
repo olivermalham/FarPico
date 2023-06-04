@@ -10,7 +10,7 @@ use crate::hal::HalFuncs;
 struct StaticAsset;
 
 
-pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
+pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
     let mut buffer = [0; 1024];  // Fixed size buffer for incoming requests
     let mut request = String::new();
 
@@ -21,7 +21,7 @@ pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
             match &*request {
                 r if r.starts_with("GET /farpi") => handle_state_request(stream, hal),
                 r if r.starts_with("GET ") => handle_static_request(stream, r),
-                r if r.starts_with("POST /farpi") => handle_update_request(stream, hal, r),
+                r if r.starts_with("POST /farpi/") => handle_update_request(stream, hal, r),
                 r => handle_not_found(stream, r),
             };
         }
@@ -72,26 +72,40 @@ fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
 
 
 // Handles action calls. Sends the updated state to the client
-fn handle_update_request<T: HalFuncs>(stream: TcpStream, hal: &T, request: &str) {
+fn handle_update_request<T: HalFuncs>(stream: TcpStream, hal: &mut T, request: &str) {
+
+    // Action string is encoded in the URL
+    let request_parts: Vec<&str> = request.split(" ").collect();
+    let path_parts: Vec<&str> = request_parts[1][1..].split("/").collect();
+
+    if path_parts.len() != 3 { return handle_bad_request(stream, request) };
+
+    let target: &str = path_parts[1];
+    let action: &str = path_parts[2];
+
+    println!("{} - TARGET: {}; ACTION: {}", stream.peer_addr().unwrap(), target, action);
+
+    // Request body should contain a JSON object representing all the parameters for the action
+
     // Remove headers from request body
     let request_parts: Vec<&str> = request.split("\r\n\r\n").collect();
-
     if request_parts.len() != 2 { return handle_bad_request(stream, request)};
-
     let request_body = request_parts[1];
 
-    hal.dispatch(request_body);
+    hal.dispatch(target, action, request_body);
     handle_state_request(stream, hal);
 }
 
 
 // 404 - Not Found response handler
-fn handle_not_found(mut stream: TcpStream, _: &str){
+fn handle_not_found(mut stream: TcpStream, request: &str){
+    println!("{} - 404 NOT FOUND: {}", stream.peer_addr().unwrap(), request);
     stream.write("HTTP/1.1 404 NOT FOUND\r\n\r\n".as_bytes()).unwrap();
 }
 
 
 // 400 - Bad Reqeust response handler
-fn handle_bad_request(mut stream: TcpStream, _: &str){
+fn handle_bad_request(mut stream: TcpStream, request: &str){
+    println!("{} - 400 BAD REQUEST: {}", stream.peer_addr().unwrap(), request);
     stream.write("HTTP/1.1 400 BAD REQUEST\r\n\r\n".as_bytes()).unwrap();
 }

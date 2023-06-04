@@ -1,31 +1,8 @@
-use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 
 
 pub trait HalComponent {
-    fn dispatch(&self, action: &str);
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ActionString {
-    pub action: String,
-    pub parameters: Map<String, Value>
-}
-
-#[derive(Serialize)]
-pub struct Gpio {
-    #[serde(skip_serializing)]
-    pub pin: u8,  // TODO: This field should be a Pin struct from the microcontroller HAL!
-    pub state: bool,
-    pub actions: Vec<String>
-}
-
-impl HalComponent for Gpio {
-    fn dispatch(&self, action_string: &str){
-        println!("GPIO Action {}", action_string);
-        let action: ActionString = serde_json::from_str(action_string).unwrap();
-        println!("ActionString object: {:?}", action);
-    }
+    // FIXME! This should return an Ok/Error enum
+    fn dispatch(&mut self, action: &str, parameter_json: &str);
 }
 
 pub trait HalFuncs {
@@ -34,6 +11,7 @@ pub trait HalFuncs {
     fn to_json(&self) -> String;
 
     // Dispatch an action string received from the client - JSON formatted as per FarPi-Server
-    fn dispatch(&self, action: &str);
+    // FIXME! This should return an Ok/Error enum
+    fn dispatch(&mut self, target: &str, action: &str, parameter_json: &str);
 }
 
