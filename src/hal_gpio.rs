@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::error::Error;
 use crate::hal::*;
 
 
@@ -18,13 +17,13 @@ struct GpioSetParamaters {
 
 
 impl HalComponent for Gpio {
-    fn dispatch(&mut self, action: &str, parameter_json: &str) -> Result <(), serde_json::error::Error>{
+    fn dispatch(&mut self, action: &str, parameter_json: &str) -> Result <(), String>{
 
         println!("GPIO Action {} - {:?}", action, parameter_json);
 
         match action {
             "action_set" => {
-                let parameters: GpioSetParamaters = serde_json::from_str(parameter_json)?;
+                let parameters: GpioSetParamaters = serde_json::from_str(parameter_json).unwrap();
                 self.state = parameters.value != 0;
                 Ok(())
             },
@@ -32,7 +31,7 @@ impl HalComponent for Gpio {
                 self.state = !self.state;
                 Ok(())
             },
-            _ => Err() // FIXME!
+            _ => Err("Buggered!".to_string()) // FIXME!
         }
     }
 }
