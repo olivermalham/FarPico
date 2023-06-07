@@ -1,4 +1,9 @@
 
+/*
+    Core functionality that must be implemented by Hardware Abstraction Layers (HALs).
+    A HAL implements the concrete interface to the project hardware.
+
+ */
 
 pub trait HalComponent {
     fn dispatch(&mut self, action: &str, parameter_json: &str) -> Result <(), serde_json::error::Error>;
