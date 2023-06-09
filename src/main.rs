@@ -1,6 +1,7 @@
 mod hal;
 mod far_pico;
 mod hal_gpio;
+mod hal_console;
 
 use std::io;
 use std::net::TcpListener;
@@ -8,6 +9,7 @@ use far_pico::process_connection;
 
 // TODO: Update these two lines to use the HAL for a specific project
 mod example_hal;
+
 use example_hal as active_hal;
 
 
@@ -27,7 +29,9 @@ much for my level of Rust skills atm.
 const SERVER_ADDRESS: &str = "0.0.0.0:7878";
 
 fn main() {
-    println!("FarPico Server {}", env!("CARGO_PKG_VERSION"));
+    println!("------------------------------------------------");
+    println!("\tFarPico Server {}", env!("CARGO_PKG_VERSION"));
+    println!("------------------------------------------------");
     println!("Starting on {}", SERVER_ADDRESS);
     let listener = TcpListener::bind(SERVER_ADDRESS).unwrap();
     listener.set_nonblocking(true).expect("Failed call to set_nonblocking");
@@ -36,6 +40,8 @@ fn main() {
     let mut hal = active_hal::build_hal();
 
     // Infinite loop
+    println!("Running");
+    println!("------------------------------------------------");
     loop {
         // Create new connection object if a client waiting
         match listener.accept() {

@@ -34,4 +34,10 @@ impl HalComponent for Gpio {
             _ => Err("Buggered!".to_string()) // FIXME!
         }
     }
+
+    // FIXME!
+    fn refresh(&mut self) -> Result<(), String> {
+        // TODO: Pull the current state from the GPIO pin
+        return Ok(());
+    }
 }

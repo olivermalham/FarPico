@@ -23,7 +23,7 @@ pub fn hal_derive_proc_macro(input: TokenStream) -> TokenStream {
 
     println!("Fields: {:?}", fields.clone());
 
-    let dispatch_calls = fields.into_iter().map(|f| {
+    let dispatch_calls = fields.clone().into_iter().map(|f| {
 
         let field_name = f.ident;
 
@@ -33,19 +33,34 @@ pub fn hal_derive_proc_macro(input: TokenStream) -> TokenStream {
         }
     );
 
+    let refresh_calls = fields.into_iter().map(|f| {
+
+        let field_name = f.ident;
+
+        quote! { self.#field_name.refresh()? }
+        }
+    );
+
     quote! {
         impl HalFuncs for #struct_name_ident {
             fn to_json(&self) -> String {
-                println!("DERIVED to_json!");
                 serde_json::to_string(self).ok().unwrap()
             }
 
             fn dispatch(&mut self, target: &str, action: &str, parameter_json: &str) -> Result <(), String> {
-                println!("DERIVED! Action Request {}.{} - {}", target, action, parameter_json);
+                println!("Action Request {}.{} - {}", target, action, parameter_json);
                 match target {
                     #(#dispatch_calls,)*
                     _ => ()
                 };
+                return Ok(());
+            }
+
+            fn refresh(&mut self) -> Result <(), String> {
+                println!("Refresh Request!");
+
+                #(#refresh_calls;)*
+
                 return Ok(());
             }
         }

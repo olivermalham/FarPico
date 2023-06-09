@@ -65,7 +65,8 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
 
 
 // Return the HAL state serialised as JSON. Request data isn't required, so ignored
-fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &T) {
+fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
+    let _ = hal.refresh();
     stream.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n").as_bytes()).unwrap();
     stream.write(hal.to_json().as_bytes()).unwrap();
 }

@@ -1,11 +1,11 @@
 use serde::Serialize;
 use crate::hal::*;
 use crate::hal_gpio::Gpio;
+use crate::hal_console::HalConsole;
 use farpi_macros_lib::HAL;
 
 /*
     Very basic example HAL
-
     All members of a HAL must implement the HalComponent trait!
  */
 #[derive(Serialize, HAL)]
@@ -14,9 +14,8 @@ pub struct ExampleHal {
     pub bcm01: Gpio,
     pub bcm02: Gpio,
     pub bcm03: Gpio,
-    // pub error: String,   // FIXME!
-    // pub message: String, // FIXME!
-    // pub cycle: i32       // FIXME!
+    pub error: HalError,
+    pub message: HalConsole,
 }
 
 
@@ -27,8 +26,7 @@ pub fn build_hal() -> ExampleHal {
         bcm01: Gpio{pin:0x02, state:false, actions:vec!["bcm01.action_set".to_string(), "bcm01.action_toggle".to_string()]},
         bcm02: Gpio{pin:0x03, state:false, actions:vec!["bcm02.action_set".to_string(), "bcm02.action_toggle".to_string()]},
         bcm03: Gpio{pin:0x04, state:false, actions:vec!["bcm03.action_set".to_string(), "bcm03.action_toggle".to_string()]},
-        // error: "No error here!".to_string(),
-        // message: "Using ExampleHAL".to_string(),
-        // cycle: 0
+        error: HalError{text: vec!["No error here!".to_string()]},
+        message: HalConsole{text: vec!["Using ExampleHAL".to_string()]},
     }
 }
