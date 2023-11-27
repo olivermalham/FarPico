@@ -9,7 +9,6 @@ use far_pico::process_connection;
 
 // TODO: Update these two lines to use the HAL for a specific project
 mod example_hal;
-
 use example_hal as active_hal;
 
 
@@ -36,7 +35,7 @@ fn main() {
     let listener = TcpListener::bind(SERVER_ADDRESS).unwrap();
     listener.set_nonblocking(true).expect("Failed call to set_nonblocking");
 
-    // Build the HAL structure - update this line to use a project-specific HAL
+    // Build the HAL instance
     let mut hal = active_hal::build_hal();
 
     // Infinite loop

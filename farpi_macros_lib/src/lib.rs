@@ -1,6 +1,6 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{parse_macro_input, DeriveInput, Data, DataStruct, Fields};
 
 #[proc_macro_derive(HAL)]
@@ -25,10 +25,12 @@ pub fn hal_derive_proc_macro(input: TokenStream) -> TokenStream {
 
     let dispatch_calls = fields.clone().into_iter().map(|f| {
 
+        let field_name_string = format!("{}", f.ident.clone().unwrap());
         let field_name = f.ident;
 
+
         quote! {
-            "#field_name" => self.#field_name.dispatch(action, parameter_json)?
+            #field_name_string => self.#field_name.dispatch(action, parameter_json)?
             }
         }
     );
@@ -51,13 +53,13 @@ pub fn hal_derive_proc_macro(input: TokenStream) -> TokenStream {
                 println!("Action Request {}.{} - {}", target, action, parameter_json);
                 match target {
                     #(#dispatch_calls,)*
-                    _ => ()
+                    _ => (println!("NO MATCH"))
                 };
                 return Ok(());
             }
 
             fn refresh(&mut self) -> Result <(), String> {
-                println!("Refresh Request!");
+                // println!("Refresh Request!");
 
                 #(#refresh_calls;)*
 

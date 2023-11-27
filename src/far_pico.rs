@@ -9,7 +9,7 @@ use crate::hal::HalFuncs;
 #[folder = "static/"]
 struct StaticAsset;
 
-
+// This handles HTTP connections
 pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
     let mut buffer = [0; 1024];  // Fixed size buffer for incoming requests
     let mut request = String::new();
@@ -28,6 +28,26 @@ pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
         Err(e) => eprintln!("Unable to read stream: {}", e),
     }
 }
+//
+// // TODO: Write a version that can use websockets
+// pub fn process_websocket_connection<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
+//     // let mut buffer = [0; 1024];  // Fixed size buffer for incoming requests
+//     // let mut request = String::new();
+//     //
+//     // match stream.read(&mut buffer) {
+//     //     Ok(size) => {
+//     //         request.push_str(String::from_utf8_lossy(&buffer[..size]).as_ref());
+//     //
+//     //         match &*request {
+//     //             r if r.starts_with("GET /farpi") => handle_state_request(stream, hal),
+//     //             r if r.starts_with("GET ") => handle_static_request(stream, r),
+//     //             r if r.starts_with("POST /farpi/") => handle_update_request(stream, hal, r),
+//     //             r => handle_not_found(stream, r),
+//     //         };
+//     //     }
+//     //     Err(e) => eprintln!("Unable to read stream: {}", e),
+//     // }
+// }
 
 
 fn handle_static_request(mut stream: TcpStream, request: &str){
@@ -54,7 +74,7 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
 
     match StaticAsset::get(trimmed_path) {
         Some(asset) => {
-            stream.write(("HTTP/1.1 200 OK\r\nContent-Type: ".to_string() + content_type + "\r\n\r\n").as_bytes()).unwrap();
+            stream.write(("HTTP/1.1 200 OK\r\nContent-Type: ".to_string() + content_type + "\r\nAccess-Control-Allow-Origin: *\r\n\r\n").as_bytes()).unwrap();
             stream.write(asset.data.as_ref()).unwrap();
         },
         None => {
@@ -67,7 +87,7 @@ fn handle_static_request(mut stream: TcpStream, request: &str){
 // Return the HAL state serialised as JSON. Request data isn't required, so ignored
 fn handle_state_request<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
     let _ = hal.refresh();
-    stream.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n").as_bytes()).unwrap();
+    stream.write(("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n").as_bytes()).unwrap();
     stream.write(hal.to_json().as_bytes()).unwrap();
 }
 
