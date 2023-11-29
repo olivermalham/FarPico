@@ -7,7 +7,7 @@ pub struct Gpio {
     #[serde(skip_serializing)]
     pub pin: u8,  // TODO: This field should be a Pin struct from the microcontroller HAL!
     pub state: bool,
-    pub actions: Vec<String> // FIXME? Don't think this is needed
+    pub actions: Vec<String>
 }
 
 #[derive(Deserialize, Debug)]

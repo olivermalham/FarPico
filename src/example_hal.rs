@@ -26,7 +26,7 @@ pub fn build_hal() -> ExampleHal {
         bcm01: Gpio{pin:0x02, state:false, actions:vec!["bcm01.action_set".to_string(), "bcm01.action_toggle".to_string()]},
         bcm02: Gpio{pin:0x03, state:false, actions:vec!["bcm02.action_set".to_string(), "bcm02.action_toggle".to_string()]},
         bcm03: Gpio{pin:0x04, state:false, actions:vec!["bcm03.action_set".to_string(), "bcm03.action_toggle".to_string()]},
-        error: HalError{text: vec!["No error here!".to_string()]},
-        message: HalConsole{text: vec!["Using ExampleHAL".to_string()]},
+        error: HalError{text: "No error here!".to_string()},
+        message: HalConsole{text: "Using ExampleHAL".to_string()},
     }
 }

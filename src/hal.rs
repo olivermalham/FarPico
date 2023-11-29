@@ -1,3 +1,4 @@
+use std::ops::Add;
 use serde::Serialize;
 
 /*
@@ -5,10 +6,16 @@ use serde::Serialize;
     A HAL implements the concrete interface to the project hardware.
  */
 
-// Every HAL component must implement these methods
+// Every HAL component should implement this trait. Default functionality provided.
 pub trait HalComponent {
-    fn dispatch(&mut self, action: &str, parameter_json: &str) -> Result <(), String>;
-    fn refresh(&mut self) -> Result <(), String>;
+
+    fn dispatch(&mut self, action: &str, parameter_json: &str) -> Result <(), String>{
+        return Ok(());
+    }
+
+    fn refresh(&mut self) -> Result <(), String>{
+        return Ok(());
+    }
 }
 
 // HalFuncs are usually implemented via derive macro
@@ -25,7 +32,7 @@ pub trait HalFuncs {
 
 #[derive(Serialize)]
 pub struct HalError {
-    pub text: Vec<String> // Line buffer
+    pub text: String // Line buffer
 }
 
 
@@ -42,14 +49,11 @@ impl HalComponent for HalError {
             _ => Err("Buggered!".to_string()) // FIXME!
         }
     }
-
-    fn refresh(&mut self) -> Result<(), String> {
-        return Ok(());
-    }
 }
+
 
 impl HalError {
     fn add(&mut self, msg: String){
-        self.text.push(msg);
+        self.text.push_str(&*msg);
     }
 }

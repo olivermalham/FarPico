@@ -11,8 +11,8 @@ class FarPiMessageBox extends FarPiElement {
     farPiUpdate(newValue) {
         let messageBox = this.getElementsByClassName("MessageBox")[0];
 
-        if(newValue["message"].length > 0){
-            messageBox.value = messageBox.value + newValue["message"] + "\n";
+        if(newValue["message"]["text"].length > 0){
+            messageBox.value = messageBox.value + newValue["message"]["text"] + "\n";
             messageBox.scrollTop = messageBox.scrollHeight;
         }
     }
@@ -40,18 +40,18 @@ class FarPiConsole extends FarPiElement {
     farPiUpdate(newValue) {
         let messageBox = this.getElementsByClassName("MessageBox")[0];
 
-        if(newValue["message"].length > 0){
-            messageBox.value = messageBox.value + newValue["message"] + "\n";
+        if(newValue["message"]["text"].length > 0){
+            messageBox.value = messageBox.value + newValue["message"]["text"] + "\n";
             messageBox.scrollTop = messageBox.scrollHeight;
         }
 
         if (newValue.message) {
-            this.buffer = this.buffer + newValue.message + "\n";
+            this.buffer = this.buffer + newValue.message.text + "\n";
             messageBox.value = this.buffer;
             messageBox.scrollTop = messageBox.scrollHeight;
         }
         if (newValue.error) {
-            this.buffer = this.buffer + "ERROR > " + newValue.error + "\n";
+            this.buffer = this.buffer + "ERROR > " + newValue.error.text + "\n";
             messageBox.value = this.buffer;
             messageBox.scrollTop = messageBox.scrollHeight;
         }

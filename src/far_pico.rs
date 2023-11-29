@@ -28,7 +28,7 @@ pub fn process_connection<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
         Err(e) => eprintln!("Unable to read stream: {}", e),
     }
 }
-//
+
 // // TODO: Write a version that can use websockets
 // pub fn process_websocket_connection<T: HalFuncs>(mut stream: TcpStream, hal: &mut T) {
 //     // let mut buffer = [0; 1024];  // Fixed size buffer for incoming requests
@@ -128,7 +128,7 @@ fn handle_not_found(mut stream: TcpStream, request: &str){
 }
 
 
-// 400 - Bad Reqeust response handler
+// 400 - Bad Request response handler
 fn handle_bad_request(mut stream: TcpStream, request: &str){
     println!("{} - 400 BAD REQUEST: {}", stream.peer_addr().unwrap(), request);
     stream.write("HTTP/1.1 400 BAD REQUEST\r\n\r\n".as_bytes()).unwrap();

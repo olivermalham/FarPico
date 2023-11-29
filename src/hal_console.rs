@@ -6,7 +6,7 @@ use crate::hal::*;
 
 #[derive(Serialize)]
 pub struct HalConsole {
-    pub text: Vec<String> // Line buffer
+    pub text: String // Line buffer
 }
 
 #[derive(Deserialize, Debug)]
@@ -20,17 +20,19 @@ impl HalComponent for HalConsole {
         println!("HalConsole Action {} - {:?}", action, parameter_json);
         // TODO: Many more actions to add here, although doubt I can easily get the same range of
         // TODO: functionality as the Python version due to lack of introspection
+        let _parameters: HalConsoleParamaters = serde_json::from_str(parameter_json).unwrap();
+
         match action {
+            "action_command" => {
+                println!("Command received!");
+                self.text.clear();
+                Ok(())  // TODO!
+            },
             "action_clear" => {
-                let _parameters: HalConsoleParamaters = serde_json::from_str(parameter_json).unwrap();
                 self.text.clear();
                 Ok(())
             },
             _ => Err("Buggered!".to_string()) // FIXME!
         }
-    }
-
-    fn refresh(&mut self) -> Result<(), String> {
-        return Ok(());
     }
 }
